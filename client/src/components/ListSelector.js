@@ -14,10 +14,12 @@ const ListSelector = () => {
 
     useEffect(() => {
         store.loadIdNamePairs();
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+    //
     let listCard = "";
     if (store) {
+        if(store.idNamePairs) {
         listCard = store.idNamePairs.map((pair) => (
             <ListCard
                 key={pair._id}
@@ -25,16 +27,12 @@ const ListSelector = () => {
                 selected={false}
             />
         ))
+        } else
+             listCard=""
     }
-
-    
-    // add new list
-    function handleCreateNewList(event) {
-        // call createNewList function in store(index.js)
-        //history.push("/");
-        store.createNewList();
+    function handleNewlist() {
+        store.createnewlist();
     }
-
     return (
         <div id="top5-list-selector">
             <div id="list-selector-heading">
@@ -42,8 +40,8 @@ const ListSelector = () => {
                     type="button"
                     id="add-list-button"
                     className="top5-button"
-                    value="+" 
-                    onClick={handleCreateNewList}/>
+                    onClick={handleNewlist}
+                    value="+" />
                 Your Lists
             </div>
             <div id="list-selector-list">

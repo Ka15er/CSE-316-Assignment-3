@@ -41,7 +41,6 @@ createTop5List = (req, res) => {
 }
 updateTop5List = async (req, res) => {
     const body = req.body
-console.log("updateTop5List: " + JSON.stringify(body));
     if (!body) {
         return res.status(400).json({
             success: false,
@@ -119,12 +118,12 @@ getTop5ListPairs = async (req, res) => {
         if (err) {
             return res.status(400).json({ success: false, error: err})
         }
-        if (!top5Lists.length) {
-            return res
-                .status(404)
-                .json({ success: false, error: 'Top 5 Lists not found'})
-        }
-        else {
+//        if (!top5Lists.length) {
+ //           return res
+  //              .status(404)
+   //             .json({ success: false, error: 'Top 5 Lists not found'})
+    //    }
+     //   else {
             // PUT ALL THE LISTS INTO ID, NAME PAIRS
             let pairs = [];
             for (let key in top5Lists) {
@@ -136,7 +135,7 @@ getTop5ListPairs = async (req, res) => {
                 pairs.push(pair);
             }
             return res.status(200).json({ success: true, idNamePairs: pairs })
-        }
+        //}
     }).catch(err => console.log(err))
 }
 

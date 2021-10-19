@@ -2,6 +2,7 @@ import { createContext, useState } from 'react'
 import jsTPS from '../common/jsTPS'
 import api from '../api'
 import MoveItem_Transaction from '../transactions/MoveItem_Transaction'
+import ChangeItem_Transaction from '../transactions/ChangeItem_Transaction'
 export const GlobalStoreContext = createContext({});
 /*
     This is our global data store. Note that it uses the Flux design pattern,
@@ -17,7 +18,8 @@ export const GlobalStoreActionType = {
     CLOSE_CURRENT_LIST: "CLOSE_CURRENT_LIST",
     LOAD_ID_NAME_PAIRS: "LOAD_ID_NAME_PAIRS",
     SET_CURRENT_LIST: "SET_CURRENT_LIST",
-    SET_LIST_NAME_EDIT_ACTIVE: "SET_LIST_NAME_EDIT_ACTIVE"
+    SET_LIST_NAME_EDIT_ACTIVE: "SET_LIST_NAME_EDIT_ACTIVE",
+    REFRESH:"REFRESH"
 }
 
 // WE'LL NEED THIS TO PROCESS TRANSACTIONS
@@ -42,6 +44,16 @@ export const useGlobalStore = () => {
         const { type, payload } = action;
         switch (type) {
             // LIST UPDATE OF ITS NAME
+            case GlobalStoreActionType.REFRESH: {
+                return setStore({
+                    idNamePairs: payload,
+                    currentList: store.top5List,
+                    newListCounter: store.newListCounter,
+                    isListNameEditActive: false,
+                    isItemEditActive: false,
+                    listMarkedForDeletion: null
+                });
+            }
             case GlobalStoreActionType.CHANGE_LIST_NAME: {
                 return setStore({
                     idNamePairs: payload.idNamePairs,
@@ -145,6 +157,19 @@ export const useGlobalStore = () => {
         });
     }
 
+    store.createnewlist = function () {
+        async function asyncCreateNewList (){
+            let newList = {"name": "Untitled", "items": ["?", "?", "?", "?", "?"]}
+            const resp = await api.createTop5List(newList);
+            if (resp.data.success){
+
+                store.loadIdNamePairs();
+                //store.setCurrentList(result.data.top5List._id);
+            }
+        }
+        asyncCreateNewList();        
+    }
+
     // THIS FUNCTION LOADS ALL THE ID, NAME PAIRS SO WE CAN LIST ALL THE LISTS
     store.loadIdNamePairs = function () {
         async function asyncLoadIdNamePairs() {
@@ -189,6 +214,8 @@ export const useGlobalStore = () => {
         let transaction = new MoveItem_Transaction(store, start, end);
         tps.addTransaction(transaction);
     }
+
+
     store.moveItem = function (start, end) {
         start -= 1;
         end -= 1;
@@ -209,6 +236,41 @@ export const useGlobalStore = () => {
 
         // NOW MAKE IT OFFICIAL
         store.updateCurrentList();
+    }
+
+    // delete list
+    store.deleteList = function (listid) {
+        async function asyncDeleteList() {
+            const response = await api.deleteTop5ListById(listid);
+            if (response.data.success) {
+
+                async function asyncLoadIdNamePairs() {
+                    const resp = await api.getTop5ListPairs();
+                    if (resp.data.success) {
+                        let pairsArray = resp.data.idNamePairs;
+                        storeReducer({
+                            type: GlobalStoreActionType.LOAD_ID_NAME_PAIRS,
+                            payload: pairsArray
+                        });
+                    }else {
+                    }
+                }
+                asyncLoadIdNamePairs();
+            }
+        }
+        asyncDeleteList();
+    }
+
+    store.changeItemTransaction = function (index, newvalue) {
+        let oldvalue = store.currentList.items[index];
+        let transaction = new ChangeItem_Transaction(store,index, oldvalue, newvalue);
+        tps.addTransaction(transaction);
+    }
+
+    store.updateItemName = function (index,newvalue) {
+        store.currentList.items[index]=newvalue;
+        store.updateCurrentList();
+        store.closeCurrentList();
     }
     store.updateCurrentList = function() {
         async function asyncUpdateCurrentList() {
@@ -237,23 +299,6 @@ export const useGlobalStore = () => {
         });
     }
 
-    // add new list
-    store.createNewList = function () {
-        async function asyncCreateNewList (){
-            //store.loadIdNamePairs
-            //store.setCurrentList
-            let newList = {"name": "Untitled", "items": ["?", "?", "?", "?", "?"]}
-            const result = await api.createTop5List(newList);
-
-            if (result.data.success){
-                console.log(result);
-                store.loadIdNamePairs();
-                store.setCurrentList(result.data.top5List._id);
-            }
-        }
-        asyncCreateNewList();
-    }
-    
     // THIS GIVES OUR STORE AND ITS REDUCER TO ANY COMPONENT THAT NEEDS IT
     return { store, storeReducer };
 }

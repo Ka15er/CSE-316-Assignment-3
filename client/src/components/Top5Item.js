@@ -14,6 +14,32 @@ function Top5Item(props) {
         event.dataTransfer.setData("item", event.target.id);
     }
 
+    // click edit
+    function handleClick(index,event) {
+
+        let item = document.getElementById("item-" + (index+1));
+        item.innerHTML = "";
+
+        // ADD A TEXT FIELD 
+        let textInput = document.createElement("input");
+        textInput.setAttribute("type", "text");
+        textInput.setAttribute("id", "item-text-input-" + index);
+        textInput.setAttribute("value", store.currentList.items[index]);
+        item.setAttribute("draggable", "false");
+
+        item.appendChild(textInput);
+
+        textInput.onclick = (event) => {
+            event.stopPropagation();
+        }
+        textInput.onkeydown = (event) => {
+            if (event.key === 'Enter') {
+                let value = event.target.value;
+                store.changeItemTransaction(index, value);
+            }
+        }
+    }
+
     function handleDragOver(event) {
         event.preventDefault();
     }
@@ -61,6 +87,7 @@ function Top5Item(props) {
                 type="button"
                 id={"edit-item-" + index + 1}
                 className="list-card-button"
+                onClick={handleClick.bind(this,index)}// add a action on edit button
                 value={"\u270E"}
             />
             {props.text}
